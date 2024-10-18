@@ -13,6 +13,7 @@ import (
 
 var (
 	listenAddr     = flag.String("listen", ":8080", "The [IP]:port to listen for incoming connections on.")
+	unixSocket     = flag.String("socket", "", "Unix socket to listen to (overrides TCP address).")
 	workers        = flag.Int("workers", runtime.NumCPU(), "The number of worker threads to execute.")
 	period         = flag.Duration("period", 16*time.Second, "Time between each byte sent on a connection.")
 	timeslice      = flag.Duration("timeslice", 50*time.Millisecond, "How often each thread should wake up to send.")
@@ -38,14 +39,22 @@ func main() {
 	http.HandleFunc("/", tp.Handler)
 	http.HandleFunc("/robots.txt", robotsDisallowHandler)
 
-	log.Fatal(listenAndServe(*listenAddr))
+	log.Fatal(listenAndServe(*listenAddr, *unixSocket))
 }
 
-func listenAndServe(addr string) error {
+func listenAndServe(addr string, socket string) error {
 	srv := &http.Server{Addr: addr}
-	ln, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
+	if socket == "" {
+		ln, err := net.Listen("tcp", addr)
+		if err != nil {
+			return err
+		}
+		return srv.Serve(NewBufSizeListener(*rcvBuf, *sndBuf, ln.(*net.TCPListener)))
+	} else {
+		ln, err := net.Listen("unix", socket)
+		if err != nil {
+			return err
+		}
+		return srv.Serve(ln)
 	}
-	return srv.Serve(NewBufSizeListener(*rcvBuf, *sndBuf, ln.(*net.TCPListener)))
 }

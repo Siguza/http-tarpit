@@ -40,6 +40,7 @@ Command-line flags:
 ------------------
 
 	-listen=":8080": The [IP]:port to listen for incoming connections on.
+	-socket="/run/my.sock": Unix socket to listen to (overrides TCP address).
 	-max_connections=4096: The maximum number of incoming connections allowed.
 	-period=16s: Time between each byte sent on a connection.
 	-response_len=10485760: The number of bytes to send total per connection.
@@ -47,7 +48,9 @@ Command-line flags:
 	-workers=4: The number of worker threads to execute.
 
 It defaults to dual-stack IPv4/IPv6.  If you want IPv4-only, specify an IPv4
-listen address, like -listen="0.0.0.0:8080".
+listen address, like `-listen="0.0.0.0:8080"`.  
+Unix socket defaults to empty string (i.e. unused), but will override the
+`-listen` address for binding purposes, if provided.
 
 It will try to raise "ulimit -n" to the max_connections that you specify. 
 It defaults to raising the limit as much as it can; if you want it higher
